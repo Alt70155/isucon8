@@ -1,0 +1,1 @@
+/home/isucon/torb/db/schema.sql
