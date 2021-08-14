@@ -238,18 +238,18 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		"C": &Sheets{},
 	}
 
-	// rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer rows.Close()
+	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	for _, sheet := range sheetAll {
-		// var sheet Sheet
-		// rows := sheetList
-		// if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
-		// 	return nil, err
-		// }
+	// for _, sheet := range sheetAll {
+	for rows.Next() {
+		var sheet Sheet
+		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
+			return nil, err
+		}
 		event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
 		event.Total++
 		event.Sheets[sheet.Rank].Total++
@@ -326,19 +326,6 @@ func main() {
 	db, err = sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	// memo 化
-	sheetList = make(map[int]*Sheet)
-	sheetAll = []*Sheet{}
-	rows, err := db.Query("SELECT * FROM sheets")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	for _, sheet := range sheetAll {
-		sheetList[int(sheet.ID)] = sheet
 	}
 
 	e := echo.New()
