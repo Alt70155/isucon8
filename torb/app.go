@@ -184,10 +184,10 @@ func getLoginAdministrator(c echo.Context) (*Administrator, error) {
 	return &administrator, err
 }
 
-var (
-	sheetList = make(map[int]*Sheet)
-	sheetAll  = []*Sheet{}
-)
+// var (
+// 	sheetList = make(map[int]*Sheet)
+// 	sheetAll  = []*Sheet{}
+// )
 
 func getEvents(all bool) ([]*Event, error) {
 	tx, err := db.Begin()
@@ -268,7 +268,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 			return nil, err
 		}
 
-		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, sheet)
+		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 	}
 
 	return &event, nil
