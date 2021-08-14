@@ -184,6 +184,11 @@ func getLoginAdministrator(c echo.Context) (*Administrator, error) {
 	return &administrator, err
 }
 
+var (
+	sheetList = make(map[int]*Sheet)
+	sheetAll  = []*Sheet{}
+)
+
 func getEvents(all bool) ([]*Event, error) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -196,6 +201,18 @@ func getEvents(all bool) ([]*Event, error) {
 		return nil, err
 	}
 	defer rows.Close()
+
+	var events []*Event
+	for rows.Next() {
+		var event Event
+		if err := rows.Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+			return nil, err
+		}
+		if !all && !event.PublicFg {
+			continue
+		}
+		events = append(events, &event)
+	}
 
 	// memo 化
 	sheetList = make(map[int]*Sheet)
@@ -212,18 +229,8 @@ func getEvents(all bool) ([]*Event, error) {
 		sheetList[int(sheet.ID)] = &sheet
 	}
 	fmt.Println("my log ok : ", len(sheetList))
+	// memo 化
 
-	var events []*Event
-	for rows.Next() {
-		var event Event
-		if err := rows.Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
-			return nil, err
-		}
-		if !all && !event.PublicFg {
-			continue
-		}
-		events = append(events, &event)
-	}
 	for i, v := range events {
 		event, err := getEvent(v.ID, -1)
 		if err != nil {
@@ -236,11 +243,6 @@ func getEvents(all bool) ([]*Event, error) {
 	}
 	return events, nil
 }
-
-var (
-	sheetList = make(map[int]*Sheet)
-	sheetAll  = []*Sheet{}
-)
 
 func getEvent(eventID, loginUserID int64) (*Event, error) {
 	var event Event
@@ -260,7 +262,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 	// }
 	// defer rows.Close()
 
-	for _, sheet := range sheetAll {
+	for _, sheet := range sheetList {
 		// var sheet Sheet
 		// rows := sheetList
 		// if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
