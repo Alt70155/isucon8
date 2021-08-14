@@ -245,10 +245,9 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 	}
 	defer rows.Close()
 
-	// for _, sheet := range sheetList {
+	// for _, sheet := range sheetAll {
 	for rows.Next() {
 		var sheet Sheet
-		// rows := sheetList
 		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
 			return nil, err
 		}
