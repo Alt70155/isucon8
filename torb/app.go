@@ -191,7 +191,21 @@ func getEvents(all bool) ([]*Event, error) {
 	}
 	defer tx.Commit()
 
-	rows, err := tx.Query("SELECT * FROM events ORDER BY id ASC")
+	// memo 化
+	sheetList = make(map[int]*Sheet)
+	sheetAll = []*Sheet{}
+	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for _, sheet := range sheetAll {
+		sheetList[int(sheet.ID)] = sheet
+	}
+	fmt.Println("my log ok : ", len(sheetList))
+
+	rows, err = tx.Query("SELECT * FROM events ORDER BY id ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -327,20 +341,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// memo 化
-	sheetList = make(map[int]*Sheet)
-	sheetAll = []*Sheet{}
-	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	for _, sheet := range sheetAll {
-		sheetList[int(sheet.ID)] = sheet
-	}
-	fmt.Println("my log ok : ", len(sheetList))
 
 	e := echo.New()
 	funcs := template.FuncMap{
