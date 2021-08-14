@@ -197,6 +197,22 @@ func getEvents(all bool) ([]*Event, error) {
 	}
 	defer rows.Close()
 
+	// memo 化
+	sheetList = make(map[int]*Sheet)
+	sheetAll = []*Sheet{}
+	rowsSheet, err := tx.Query("SELECT * FROM sheets ORDER BY `rank`, num")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rowsSheet.Close()
+
+	for rowsSheet.Next() {
+		var sheet Sheet
+		rowsSheet.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price)
+		sheetList[int(sheet.ID)] = &sheet
+	}
+	fmt.Println("my log ok : ", len(sheetList))
+
 	var events []*Event
 	for rows.Next() {
 		var event Event
@@ -327,22 +343,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// memo 化
-	sheetList = make(map[int]*Sheet)
-	sheetAll = []*Sheet{}
-	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var sheet Sheet
-		rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price)
-		sheetList[int(sheet.ID)] = &sheet
-	}
-	fmt.Println("my log ok : ", len(sheetList))
 
 	e := echo.New()
 	funcs := template.FuncMap{
