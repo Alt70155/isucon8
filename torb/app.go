@@ -331,7 +331,7 @@ func main() {
 	// memo 化
 	sheetList = make(map[int]*Sheet)
 	sheetAll = []*Sheet{}
-	rows, err := db.Query("SELECT * FROM sheets")
+	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -340,6 +340,7 @@ func main() {
 	for _, sheet := range sheetAll {
 		sheetList[int(sheet.ID)] = sheet
 	}
+	fmt.Println("my log ok : ", len(sheetList))
 
 	e := echo.New()
 	funcs := template.FuncMap{
