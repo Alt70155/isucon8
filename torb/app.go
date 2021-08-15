@@ -311,8 +311,8 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 	}
 	defer rows.Close()
 
+	fmt.Println("[My Log] ok getEvent")
 	for rows.Next() {
-		fmt.Println("[My Log] ok getEvent")
 		var sheet Sheet
 		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
 			return nil, err
