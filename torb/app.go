@@ -282,6 +282,8 @@ func getMyEvent(eventIdList []string, loginUserID int64) (eventList map[int]*Eve
 				return nil, err
 			}
 
+			fmt.Println("[My log] my reservation", reservation)
+
 			event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 		}
 	}
@@ -328,6 +330,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		} else {
 			return nil, err
 		}
+		fmt.Println("[My log] def reservation", reservation)
 
 		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 	}
