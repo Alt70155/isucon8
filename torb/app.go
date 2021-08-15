@@ -261,6 +261,7 @@ func getMyEvent(eventIdList []string, loginUserID int64) (eventList map[int]*Eve
 	for _, eventId := range eventIdIntList {
 		event := eventList[eventId]
 		for rows.Next() {
+			fmt.Println("[My Log] OK")
 			var sheet Sheet
 			if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
 				return nil, err
@@ -546,7 +547,7 @@ func main() {
 
 		fmt.Println("[My Log] eventIdList:", eventIdList)
 
-		var recentEvents []*Event
+		var myRecentEvents []*Event
 		eventList, err := getMyEvent(eventIdList, -1)
 		if err != nil {
 			return err
@@ -555,12 +556,13 @@ func main() {
 			for k := range event.Sheets {
 				event.Sheets[k].Detail = nil
 			}
-			recentEvents = append(recentEvents, event)
+			myRecentEvents = append(myRecentEvents, event)
 		}
-		for _, event := range recentEvents {
+		for _, event := range myRecentEvents {
 			fmt.Println("[My Log] my event: ", event.ID, event.Title)
 		}
 		// 前の実装
+		var recentEvents []*Event
 		for rows.Next() {
 			var eventID int64
 			if err := rows.Scan(&eventID); err != nil {
