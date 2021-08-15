@@ -591,7 +591,7 @@ func main() {
 			"nickname":            user.Nickname,
 			"recent_reservations": recentReservations,
 			"total_price":         totalPrice,
-			"recent_events":       myRecentEvents,
+			"recent_events":       recentEvents,
 		})
 	}, loginRequired)
 	e.POST("/api/actions/login", func(c echo.Context) error {
