@@ -235,6 +235,7 @@ func getMyEvent(eventIdList []string, loginUserID int64) (eventList map[int]*Eve
 		rows.Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price)
 		eventList[int(event.ID)] = &event
 	}
+	fmt.Println("[My Log] eventList:", eventList)
 
 	for _, event := range eventList {
 		event.Sheets = map[string]*Sheets{
