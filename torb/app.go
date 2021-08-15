@@ -252,7 +252,14 @@ func getMyEvent(eventIdList []string, loginUserID int64) (eventList map[int]*Eve
 	}
 	defer rows.Close()
 
-	for _, event := range eventList {
+	var eventIdIntList []int
+	for _, idStr := range eventIdList {
+		i, _ := strconv.Atoi(idStr)
+		eventIdIntList = append(eventIdIntList, i)
+	}
+
+	for _, eventId := range eventIdIntList {
+		event := eventList[eventId]
 		for rows.Next() {
 			var sheet Sheet
 			if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
