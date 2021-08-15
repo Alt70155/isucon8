@@ -564,27 +564,27 @@ func main() {
 			fmt.Println("[My Log] my event: ", event.ID, event.Title)
 		}
 		// 前の実装
-		// var recentEvents []*Event
-		// for rows.Next() {
-		// 	var eventID int64
-		// 	if err := rows.Scan(&eventID); err != nil {
-		// 		return err
-		// 	}
-		// 	event, err := getEvent(eventID, -1)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	for k := range event.Sheets {
-		// 		event.Sheets[k].Detail = nil
-		// 	}
-		// 	recentEvents = append(recentEvents, event)
-		// }
-		// if recentEvents == nil {
-		// 	recentEvents = make([]*Event, 0)
-		// }
-		// for _, event := range recentEvents {
-		// 	fmt.Println("[My Log] default event: ", event.ID, event.Title)
-		// }
+		var recentEvents []*Event
+		for rows.Next() {
+			var eventID int64
+			if err := rows.Scan(&eventID); err != nil {
+				return err
+			}
+			event, err := getEvent(eventID, -1)
+			if err != nil {
+				return err
+			}
+			for k := range event.Sheets {
+				event.Sheets[k].Detail = nil
+			}
+			recentEvents = append(recentEvents, event)
+		}
+		if recentEvents == nil {
+			recentEvents = make([]*Event, 0)
+		}
+		for _, event := range recentEvents {
+			fmt.Println("[My Log] default event: ", event.ID, event.Title)
+		}
 
 		return c.JSON(200, echo.Map{
 			"id":                  user.ID,
