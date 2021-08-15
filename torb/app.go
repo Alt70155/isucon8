@@ -262,7 +262,6 @@ func getMyEvent(eventIdList []string, loginUserID int64) (eventList map[int]*Eve
 		fmt.Println("[My Log] OK1")
 		fmt.Println("[My Log] event", event)
 		for rows.Next() {
-			fmt.Println("[My Log] OK2")
 			var sheet Sheet
 			if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
 				return nil, err
@@ -313,6 +312,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 	defer rows.Close()
 
 	for rows.Next() {
+		fmt.Println("[My Log] ok getEvent")
 		var sheet Sheet
 		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
 			return nil, err
