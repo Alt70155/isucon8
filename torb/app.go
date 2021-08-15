@@ -221,10 +221,6 @@ func getEvents(all bool) ([]*Event, error) {
 	return events, nil
 }
 
-var (
-	eventList = make(map[int]*Event)
-)
-
 func getMyEvent(eventIdList []string, loginUserID int64) (eventList map[int]*Event, error error) {
 	eventIdStrList := strings.Join(eventIdList, ",")
 	rows, err := db.Query("SELECT * FROM events WHERE id IN (" + eventIdStrList + ")")
@@ -535,6 +531,8 @@ func main() {
 			}
 			eventIdList = append(eventIdList, strconv.Itoa(int(eventID)))
 		}
+
+		fmt.Println("[My Log] eventIdList:", eventIdList)
 
 		var recentEvents []*Event
 		eventList, err := getMyEvent(eventIdList, -1)
