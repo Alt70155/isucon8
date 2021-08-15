@@ -260,7 +260,6 @@ func getMyEvent(eventIdList []string, loginUserID int64) (eventList map[int]*Eve
 
 	for _, eventId := range eventIdIntList {
 		event := eventList[eventId]
-		fmt.Println("[My Log] event id, title: ", event.ID, event.Title)
 		for rows.Next() {
 			var sheet Sheet
 			if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
@@ -532,6 +531,7 @@ func main() {
 		}
 		defer rows.Close()
 
+		// 自分の実装
 		var eventIdList []string
 		for rows.Next() {
 			var eventID int64
@@ -554,22 +554,29 @@ func main() {
 			}
 			recentEvents = append(recentEvents, event)
 		}
-		// for rows.Next() {
-		// 	var eventID int64
-		// 	if err := rows.Scan(&eventID); err != nil {
-		// 		return err
-		// 	}
-		// 	event, err := getEvent(eventID, -1)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	for k := range event.Sheets {
-		// 		event.Sheets[k].Detail = nil
-		// 	}
-		// 	recentEvents = append(recentEvents, event)
-		// }
+		for _, event := range recentEvents {
+			fmt.Println("[My Log] my event: ", event.ID, event.Title)
+		}
+		// 前の実装
+		for rows.Next() {
+			var eventID int64
+			if err := rows.Scan(&eventID); err != nil {
+				return err
+			}
+			event, err := getEvent(eventID, -1)
+			if err != nil {
+				return err
+			}
+			for k := range event.Sheets {
+				event.Sheets[k].Detail = nil
+			}
+			recentEvents = append(recentEvents, event)
+		}
 		if recentEvents == nil {
 			recentEvents = make([]*Event, 0)
+		}
+		for _, event := range recentEvents {
+			fmt.Println("[My Log] default event: ", event.ID, event.Title)
 		}
 
 		return c.JSON(200, echo.Map{
