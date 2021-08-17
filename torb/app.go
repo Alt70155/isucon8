@@ -279,7 +279,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		}
 	}
 
-	// memoSheets()
+	memoSheets()
 
 	for rows.Next() {
 		var sheet Sheet
