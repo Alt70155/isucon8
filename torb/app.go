@@ -273,7 +273,8 @@ func getMyEvent(eventID, loginUserID int64) (*Event, error) {
 		}
 	}
 
-	for i, _ := range sheetList {
+	fmt.Println("[My Log] START-------------------")
+	for i := 0; i < len(sheetList); i++ {
 		var sheet Sheet
 		sheet = sheetList[i]
 		fmt.Println("[My Log] sheet id:", sheet.ID)
