@@ -358,7 +358,24 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 	}
 	defer rows.Close()
 
-	fmt.Println("[My Log] ok getEvent")
+	rRows, err := db.Query("SELECT * FROM reservations WHERE event_id = ? AND canceled_at IS NULL", event.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rRows.Close()
+
+	reservations := make(map[int64]Reservation)
+	var reservation Reservation
+	for rRows.Next() {
+		rRows.Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt)
+		r, ok := reservations[reservation.SheetID]
+		if ok && r.ReservedAt.Before(*reservation.ReservedAt) {
+			continue
+		} else {
+			reservations[reservation.SheetID] = reservation
+		}
+	}
+
 	for rows.Next() {
 		var sheet Sheet
 		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
@@ -368,17 +385,15 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		event.Total++
 		event.Sheets[sheet.Rank].Total++
 
-		var reservation Reservation
-		err := db.QueryRow("SELECT * FROM reservations WHERE event_id = ? AND sheet_id = ? AND canceled_at IS NULL GROUP BY event_id, sheet_id HAVING reserved_at = MIN(reserved_at)", event.ID, sheet.ID).Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt)
-		if err == nil {
-			sheet.Mine = reservation.UserID == loginUserID
+		r, ok := reservations[sheet.ID]
+
+		if ok {
+			sheet.Mine = r.UserID == loginUserID
 			sheet.Reserved = true
-			sheet.ReservedAtUnix = reservation.ReservedAt.Unix()
-		} else if err == sql.ErrNoRows {
+			sheet.ReservedAtUnix = r.ReservedAt.Unix()
+		} else {
 			event.Remains++
 			event.Sheets[sheet.Rank].Remains++
-		} else {
-			return nil, err
 		}
 		// fmt.Println("[My log] def reservation", reservation)
 
@@ -585,31 +600,31 @@ func main() {
 		defer rows.Close()
 
 		// 自分の実装
-		var eventIdList []string
-		for rows.Next() {
-			var eventID int64
-			if err := rows.Scan(&eventID); err != nil {
-				return err
-			}
-			eventIdList = append(eventIdList, strconv.Itoa(int(eventID)))
-		}
+		// var eventIdList []string
+		// for rows.Next() {
+		// 	var eventID int64
+		// 	if err := rows.Scan(&eventID); err != nil {
+		// 		return err
+		// 	}
+		// 	eventIdList = append(eventIdList, strconv.Itoa(int(eventID)))
+		// }
 
-		fmt.Println("[My Log] eventIdList:", eventIdList)
+		// fmt.Println("[My Log] eventIdList:", eventIdList)
 
-		var myRecentEvents []*Event
-		eventList, err := getMyEvent(eventIdList, -1)
-		if err != nil {
-			return err
-		}
-		for _, event := range eventList {
-			for k := range event.Sheets {
-				event.Sheets[k].Detail = nil
-			}
-			myRecentEvents = append(myRecentEvents, event)
-		}
-		for _, event := range myRecentEvents {
-			fmt.Println("[My Log] my event: ", event.ID, event.Title)
-		}
+		// var myRecentEvents []*Event
+		// eventList, err := getMyEvent(eventIdList, -1)
+		// if err != nil {
+		// 	return err
+		// }
+		// for _, event := range eventList {
+		// 	for k := range event.Sheets {
+		// 		event.Sheets[k].Detail = nil
+		// 	}
+		// 	myRecentEvents = append(myRecentEvents, event)
+		// }
+		// for _, event := range myRecentEvents {
+		// 	fmt.Println("[My Log] my event: ", event.ID, event.Title)
+		// }
 		// 前の実装
 		var recentEvents []*Event
 		for rows.Next() {
@@ -638,7 +653,7 @@ func main() {
 			"nickname":            user.Nickname,
 			"recent_reservations": recentReservations,
 			"total_price":         totalPrice,
-			"recent_events":       myRecentEvents,
+			"recent_events":       recentEvents,
 		})
 	}, loginRequired)
 	e.POST("/api/actions/login", func(c echo.Context) error {
