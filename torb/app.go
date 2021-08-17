@@ -222,11 +222,11 @@ func getEvents(all bool) ([]*Event, error) {
 }
 
 var (
-	sheetList = make(map[int64]Sheet)
+	sheetList = make(map[int]Sheet)
 )
 
 func memoSheets() {
-	sheetList = make(map[int64]Sheet)
+	sheetList = make(map[int]Sheet)
 
 	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
 	if err != nil {
@@ -234,13 +234,13 @@ func memoSheets() {
 	}
 	defer rows.Close()
 
+	i := 0
 	for rows.Next() {
 		var sheet Sheet
 		rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price)
-		sheetList[sheet.ID] = sheet
+		sheetList[i] = sheet
+		i += 1
 	}
-
-	fmt.Println("[My Log] sheetList: ", sheetList)
 }
 
 func getEvent(eventID, loginUserID int64) (*Event, error) {
@@ -298,7 +298,6 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 			event.Remains++
 			event.Sheets[sheet.Rank].Remains++
 		}
-		// fmt.Println("[My log] def reservation", reservation)
 
 		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 	}
@@ -361,8 +360,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	memoSheets()
-
 	e := echo.New()
 	funcs := template.FuncMap{
 		"encode_json": func(v interface{}) string {
@@ -376,6 +373,7 @@ func main() {
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{Output: os.Stderr}))
 	e.Static("/", "public")
+
 	e.GET("/", func(c echo.Context) error {
 		events, err := getEvents(false)
 		if err != nil {
