@@ -221,123 +221,26 @@ func getEvents(all bool) ([]*Event, error) {
 	return events, nil
 }
 
-func getMyEvent(eventIdList []string, loginUserID int64) (eventList map[int]*Event, error error) {
-	eventIdStrList := strings.Join(eventIdList, ",")
-	rows, err := db.Query("SELECT * FROM events WHERE id IN (" + eventIdStrList + ")")
+var (
+	sheetList = make(map[int64]Sheet)
+)
 
-	if err != nil {
-		return nil, err
-	}
-
-	eventList = make(map[int]*Event)
-	for rows.Next() {
-		var event Event
-		rows.Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price)
-		eventList[int(event.ID)] = &event
-	}
-
-	for _, event := range eventList {
-		event.Sheets = map[string]*Sheets{
-			"S": &Sheets{},
-			"A": &Sheets{},
-			"B": &Sheets{},
-			"C": &Sheets{},
-		}
-	}
-
-	rows, err = db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
-	if err != nil {
-		return nil, err
-	}
-
-	var eventIdIntList []int
-	for _, idStr := range eventIdList {
-		i, _ := strconv.Atoi(idStr)
-		eventIdIntList = append(eventIdIntList, i)
-	}
-
-	fmt.Println("[My Log] len", len(eventIdIntList))
-	for _, eventId := range eventIdIntList {
-		event := eventList[eventId]
-		fmt.Println("[My Log] OK1")
-		fmt.Println("[My Log] event", event)
-		for rows.Next() {
-			var sheet Sheet
-			if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
-				return nil, err
-			}
-			event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
-			event.Total++
-			event.Sheets[sheet.Rank].Total++
-
-			var reservation Reservation
-			err := db.QueryRow("SELECT * FROM reservations WHERE event_id = ? AND sheet_id = ? AND canceled_at IS NULL GROUP BY event_id, sheet_id HAVING reserved_at = MIN(reserved_at)", event.ID, sheet.ID).Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt)
-			if err == nil {
-				sheet.Mine = reservation.UserID == loginUserID
-				sheet.Reserved = true
-				sheet.ReservedAtUnix = reservation.ReservedAt.Unix()
-			} else if err == sql.ErrNoRows {
-				event.Remains++
-				event.Sheets[sheet.Rank].Remains++
-			} else {
-				return nil, err
-			}
-
-			fmt.Println("[My log] my reservation", reservation)
-
-			event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
-		}
-	}
-	defer rows.Close()
-
-	return eventList, nil
-}
-
-func getDefEvent(eventID, loginUserID int64) (*Event, error) {
-	var event Event
-	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
-		return nil, err
-	}
-	event.Sheets = map[string]*Sheets{
-		"S": &Sheets{},
-		"A": &Sheets{},
-		"B": &Sheets{},
-		"C": &Sheets{},
-	}
+func memoSheets() {
+	sheetList = make(map[int64]Sheet)
 
 	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var sheet Sheet
-		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
-			return nil, err
-		}
-		event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
-		event.Total++
-		event.Sheets[sheet.Rank].Total++
-
-		var reservation Reservation
-		err := db.QueryRow("SELECT * FROM reservations WHERE event_id = ? AND sheet_id = ? AND canceled_at IS NULL GROUP BY event_id, sheet_id HAVING reserved_at = MIN(reserved_at)", event.ID, sheet.ID).Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt)
-		if err == nil {
-			sheet.Mine = reservation.UserID == loginUserID
-			sheet.Reserved = true
-			sheet.ReservedAtUnix = reservation.ReservedAt.Unix()
-		} else if err == sql.ErrNoRows {
-			event.Remains++
-			event.Sheets[sheet.Rank].Remains++
-		} else {
-			return nil, err
-		}
-		fmt.Println("[My log] def reservation", reservation)
-
-		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
+		rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price)
+		sheetList[sheet.ID] = sheet
 	}
 
-	return &event, nil
+	fmt.Println("[My Log] sheetList: ", sheetList)
 }
 
 func getEvent(eventID, loginUserID int64) (*Event, error) {
@@ -457,6 +360,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	memoSheets()
 
 	e := echo.New()
 	funcs := template.FuncMap{
