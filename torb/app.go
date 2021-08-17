@@ -228,16 +228,16 @@ var (
 func memoSheets() {
 	sheetList = make(map[int]Sheet)
 
-	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
+	sRows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer rows.Close()
+	defer sRows.Close()
 
 	i := 0
-	for rows.Next() {
+	for sRows.Next() {
 		var sheet Sheet
-		rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price)
+		sRows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price)
 		sheetList[i] = sheet
 		i += 1
 	}
