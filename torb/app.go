@@ -537,7 +537,7 @@ func main() {
 			if err := rows.Scan(&eventID); err != nil {
 				return err
 			}
-			event, err := getDefEvent(eventID, -1)
+			event, err := getEvent(eventID, -1)
 			if err != nil {
 				return err
 			}
@@ -548,9 +548,6 @@ func main() {
 		}
 		if recentEvents == nil {
 			recentEvents = make([]*Event, 0)
-		}
-		for _, event := range recentEvents {
-			fmt.Println("[My Log] default event: ", event.ID, event.Title)
 		}
 
 		return c.JSON(200, echo.Map{
