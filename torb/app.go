@@ -243,6 +243,61 @@ func memoSheets() {
 	}
 }
 
+func getMyEvent(eventID, loginUserID int64) (*Event, error) {
+	var event Event
+	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+		return nil, err
+	}
+	event.Sheets = map[string]*Sheets{
+		"S": &Sheets{},
+		"A": &Sheets{},
+		"B": &Sheets{},
+		"C": &Sheets{},
+	}
+
+	rRows, err := db.Query("SELECT * FROM reservations WHERE event_id = ? AND canceled_at IS NULL", event.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rRows.Close()
+
+	reservations := make(map[int64]Reservation)
+	var reservation Reservation
+	for rRows.Next() {
+		rRows.Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt)
+		r, ok := reservations[reservation.SheetID]
+		if ok && r.ReservedAt.Before(*reservation.ReservedAt) {
+			continue
+		} else {
+			reservations[reservation.SheetID] = reservation
+		}
+	}
+
+	for i, _ := range sheetList {
+		var sheet Sheet
+		sheet = sheetList[i]
+		fmt.Println("[My Log] sheet id:", sheet.ID)
+		event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
+		event.Total++
+		event.Sheets[sheet.Rank].Total++
+
+		r, ok := reservations[sheet.ID]
+
+		if ok {
+			sheet.Mine = r.UserID == loginUserID
+			sheet.Reserved = true
+			sheet.ReservedAtUnix = r.ReservedAt.Unix()
+		} else {
+			event.Remains++
+			event.Sheets[sheet.Rank].Remains++
+		}
+
+		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
+	}
+
+	return &event, nil
+}
+
 func getEvent(eventID, loginUserID int64) (*Event, error) {
 	var event Event
 	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
@@ -469,7 +524,7 @@ func main() {
 				return err
 			}
 
-			event, err := getEvent(reservation.EventID, -1)
+			event, err := getMyEvent(reservation.EventID, -1)
 			if err != nil {
 				return err
 			}
@@ -536,7 +591,7 @@ func main() {
 			if err := rows.Scan(&eventID); err != nil {
 				return err
 			}
-			event, err := getEvent(eventID, -1)
+			event, err := getMyEvent(eventID, -1)
 			if err != nil {
 				return err
 			}
